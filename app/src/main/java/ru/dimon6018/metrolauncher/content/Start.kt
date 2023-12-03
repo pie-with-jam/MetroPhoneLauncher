@@ -3,8 +3,10 @@ package ru.dimon6018.metrolauncher.content
 import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +17,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -31,7 +34,14 @@ import ru.dimon6018.metrolauncher.content.data.DataProvider.mDataStatic
 import ru.dimon6018.metrolauncher.content.data.Prefs
 import ru.dimon6018.metrolauncher.helpers.*
 import java.util.*
+import java.util.jar.Manifest
 
+// Import necessary libraries
+import android.graphics.drawable.BitmapDrawable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class Start : Fragment(), OnStartDragListener {
     private var mRecyclerView: RecyclerView? = null
@@ -51,6 +61,7 @@ class Start : Fragment(), OnStartDragListener {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val v = inflater.inflate(R.layout.start_screen, container, false)
+
         contxt = context
         prefs = Prefs(contxt)
         progressBar = v.findViewById(R.id.progressBarStart)
@@ -58,11 +69,11 @@ class Start : Fragment(), OnStartDragListener {
         loadingHolder = v.findViewById(R.id.loadingHolderStart)
         mAppListButton = v.findViewById(R.id.open_applist_btn)
         background = v.findViewById(R.id.startBackground)
+        //background = v.findViewById(R.id.startBackground)
         mRecyclerView = v.findViewById(R.id.start_apps_tiles)
-        if(prefs!!.isCustomBackgroundUsed) {
+        if (prefs!!.isCustomBackgroundUsed) {
             try {
                 background!!.background = AppCompatResources.getDrawable(contxt!!, R.drawable.start_transparent)
-                WallpaperManager.getInstance(contxt).drawable
             } catch (ex: Exception) {
                 Snackbar.make(mRecyclerView!!, "something went wrong. see $ex", Snackbar.LENGTH_LONG).show()
                 Log.e("Start", ex.toString())
@@ -71,8 +82,10 @@ class Start : Fragment(), OnStartDragListener {
         } else {
             requireActivity().window.setBackgroundDrawable(AppCompatResources.getDrawable(contxt!!, R.drawable.start_background))
         }
+
         return v
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val threadStart = Thread {

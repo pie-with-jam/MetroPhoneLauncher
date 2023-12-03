@@ -22,7 +22,15 @@ import ru.dimon6018.metrolauncher.content.data.DataProviderFragment
 import ru.dimon6018.metrolauncher.content.data.Prefs
 import ru.dimon6018.metrolauncher.helpers.AbstractDataProvider
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+
 class Main : AppCompatActivity() {
+
+    private val REQUEST_PERMISSIONS_CODE = 123
 
     private lateinit var viewPager: ViewPager2
     private lateinit var pagerAdapter: FragmentStateAdapter
@@ -34,6 +42,8 @@ class Main : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_screen_laucnher)
 
+        checkPermissions()
+
         initViews()
 
         setupNavigationBar()
@@ -43,6 +53,66 @@ class Main : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
                 .add(DataProviderFragment(), FRAGMENT_TAG_DATA_PROVIDER)
                 .commit()
+    }
+
+    private fun checkPermissions() {
+        val permissions = arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val missingPermissions = ArrayList<String>()
+
+            for (permission in permissions) {
+                if (ContextCompat.checkSelfPermission(this, permission)
+                        != PackageManager.PERMISSION_GRANTED
+                ) {
+                    missingPermissions.add(permission)
+                }
+            }
+
+            if (missingPermissions.isNotEmpty()) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        missingPermissions.toTypedArray(),
+                        REQUEST_PERMISSIONS_CODE
+                )
+            } else {
+                // Разрешения уже предоставлены
+                // Можете выполнять операции с файлами и медиафайлами
+            }
+        } else {
+            // Для устройств с версией Android ниже 23 разрешения предоставляются автоматически
+            // Можете выполнять операции с файлами и медиафайлами
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_PERMISSIONS_CODE) {
+            for (result in grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    // Если хотя бы одно разрешение не было предоставлено
+                    Toast.makeText(
+                            this,
+                            "Необходимо предоставить все разрешения для работы приложения",
+                            Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Закрываем приложение
+                    finish()
+                    return
+                }
+            }
+
+            // Все разрешения предоставлены
+            // Можете выполнять операции с файлами и медиафайлами
+        }
     }
 
     private fun initViews() {
